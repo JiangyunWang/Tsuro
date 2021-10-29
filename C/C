@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+from json import JSONDecodeError
+import socket
+
+HOST = '127.0.0.1'
+PORT = 8000
+
+def check_type(input):
+    return type(input) == str or \
+           ((type(input) == list) and (type(input[0]) == str)) or \
+           (type(input) == dict and "this" in input and type(input["this"]) == str)
+
+def convert_json(input):
+    output = []
+    json_decoder = json.JSONDecoder()
+    cur_index = 0
+    while len(input) > cur_index:
+        if input[cur_index] == " ":
+            cur_index += 1
+        else:
+            try:
+                json_val, json_index = json_decoder.raw_decode(input[cur_index:])
+                cur_index += json_index
+                if check_type(json_val):
+                    output.append(json_val)
+            except JSONDecodeError:
+                cur_index += 1
+                continue;
+    return output
+
+def customSort(item):
+    if type(item) == str:
+        return item
+    if type(item) == list:
+        return item[0]
+    else:
+        return item["this"]
+
+def main():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        json_data = '';
+        conn, addr = s.accept()
+        with conn:
+            while True:
+                temp_data = conn.recv(1024).decode("utf-8");
+                if not temp_data:
+                    break;
+                json_data += temp_data
+            filtered_file = convert_json(json_data)
+            sorted_file = sorted(filtered_file, key=customSort)
+            for item in sorted_file:
+                conn.sendall(json.dumps(item).encode("utf-8"));
+
+if __name__ == '__main__':
+    main()

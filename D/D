@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+import sys;
+import json;
+import argparse;
+import socket;
+from json import JSONDecodeError
+
+# Check command helper
+#-----------------------------------------------
+# check if dest node is in the neighbor of src node
+# if it is not, either create an object or append into the neighbor list
+def one_dir_check(src, dest):
+    src_list = edges.get(src)
+    if src_list:
+        for neighbor in src_list:
+            if neighbor != '' and neighbor == dest:
+                print("Duplicated edge.")
+                return False;
+        src_list.append(dest)
+    else:
+        edges[src] = [dest]
+    return True
+
+# create a labyrinth and check invalid edges
+# we had create_graph(x,y) in our previous traversal.md, but in this case, 
+# we actually get edges as input. Our previos traversal.md won't work here, so 
+# we change the design of creating labyrinth. The method should takes in distinct
+# edges to create a labyrinth.
+def lab_creation(input):
+    nodes = input[1:]
+    output = ["lab"]
+    nodes_added = [];
+    edges_added = [];
+    for pair in nodes:
+        try:
+            src = pair["from"]
+            des = pair["to"]
+        except:
+            print("Invalid labyrinth creation!")
+            return None;
+        if one_dir_check(src, des) and one_dir_check(des,src):
+            edges_added.append([src, des]);
+            if src not in nodes_added:
+            	nodes_added.append(src)
+            if des not in nodes_added:
+            	nodes_added.append(des);
+    output.append(nodes_added);
+    output.append(edges_added);
+    create_lab_input = output;
+    created_lab = True;
+    return create_lab_input;
+
+# check if add command is valid
+# We didn't write this method in our specification because we thought we need
+# image color to really show client with labyrinth graph. Thus, we change the 
+# design, and have a method that takes name of node and uniqe color string to add
+# color on named node
+def token_check(input):
+    node = input[2]
+    color = input[1]
+    if node in edges and color in color_string:
+        # color has to be one of the color_string
+        token[node] = color
+        return input;
+    else:
+        print('["not a request",', input, "]")
+        return None;
+#--------------------------------------------------------
+
+"""
+Parse the user input from command-line.
+return: arguments from the user input.
+"""
+def parseArgs():
+	parser = argparse.ArgumentParser(description='Parse the command-line input');
+	parser.add_argument("-ip_address", "--ip_address", default="127.0.0.1", action="store");
+	parser.add_argument("-port", "---port", type=int, default=8000, action="store");
+	parser.add_argument("-username", "--username", default="John Doe", action="store");
+	args = parser.parse_args();
+	return args;
+
+# conver json input
+def convert_json(input):
+    output = []
+    json_decoder = json.JSONDecoder()
+    cur_index = 0
+    while len(input) > cur_index:
+        if input[cur_index] == " ":
+            cur_index += 1
+        else:
+            try:
+                json_val, json_index = json_decoder.raw_decode(input[cur_index:])
+                cur_index += json_index
+                output.append(json_val);
+            except JSONDecodeError:
+                cur_index += 1
+                continue;
+    return output
+
+def check_command(commands, created_lab):
+	filter_command = [];
+	created_lab_input = [];
+	if type(commands[0]) is not list:
+		commands = [commands];
+	for command in commands:
+		if command[0] == "lab" and len(command) == 1:
+			print("[\"not a request\", " + command + "]");
+		elif command[0] == "lab" and len(command) > 1:
+			if not created_lab:
+				created_lab_input = lab_creation(command);
+			else:
+				print("[\"not a request\", " + command + "]");
+		elif command[0] == "add" and len(command) == 3:
+			input_command = token_check(command);
+			if input_command:
+				filter_command.append(input_command);
+		elif command[0] == "move" and len(command) == 3:
+			input_command = token_check(command);
+			filter_command.append(command);
+		else:
+			print("[\"not a request\", " + str(command[0]) + "]");
+	return created_lab_input, filter_command;
+
+# Check if the batch ready to send to server is valid.
+def checkBatch(batch):
+	if len(batch) < 2:
+		print("Invalid batch");
+		return False;
+	if batch[0][0] != "add" and batch[-1][0] == "move":
+		print("Invalid batch");
+		return False;
+	return True;
+
+# Connect to socket and exchange information. Close connection when user types in 
+# control D
+def startConnection(args):
+	HOST = args.ip_address;
+	PORT = args.port;
+	NAME = args.username;
+	created_lab = False;
+	batch_ready = False;
+	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+		s.connect((HOST, PORT));
+		s.sendall(json.dumps(NAME).encode("utf-8"));
+		json_data = '';
+		batch = [];
+		temp_data = s.recv(1024).decode("utf-8");
+		session_id = temp_data;
+		print(session_id);
+
+		for line in sys.stdin:
+			filter_input = [];
+			if EOFError and not line:
+				s.close();
+			if line:
+				created_lab_input, filter_input = check_command(convert_json(line), created_lab);
+				if len(created_lab_input) > 0:
+					s.sendall(json.dumps(created_lab_input).encode("utf-8"));
+					created_lab = True;
+				for input in filter_input:
+					batch.append(input);
+					if input[0] == "move":
+						if checkBatch(batch):
+							s.sendall(json.dumps(batch).encode("utf-8"));
+							batch_ready = True;
+						batch = [];
+
+				json_data = '';
+				while batch_ready:
+					temp_data = s.recv(1024).decode("utf-8");
+					parse_data = convert_json(temp_data);
+					if parse_data == []:
+						break;
+					json_data += str(parse_data[0]);
+					if '\n' in temp_data:
+						break;
+					if not temp_data:
+						break;
+				if batch_ready:
+					print(json_data);
+				batch_ready = False;
+        
+
+def main():
+	"""
+	The main method will parse user input, create a socket,
+	connect to the server, receive messages from server,
+	reply to the server, and doing this back and forth.
+	"""
+	args = parseArgs();
+	startConnection(args);
+
+
+if __name__ == "__main__":
+	# Calls main when being invoked directly
+	color_string = ["white", "black", "red", "green", "blue"]
+	token = {}
+	edges = {}
+	main();

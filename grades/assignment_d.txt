@@ -1,0 +1,12 @@
+* (20/20) Correctly named artifacts
+* (5/5)   Correct directory organization  
+* (5/5)   Executable D runs without input without throwing 
+* (5/5)   D takes arguments
+* (10/12) D connecting, sending, printing, disconnecting correctly
+* (15/15)  D hidden passing tests 
+          - Good job!
+* (18/18) Task 2
+
+Total: (78/80)
+
+Graded by Sai.

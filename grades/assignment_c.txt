@@ -1,0 +1,15 @@
+* (20/20) Correctly named artifacts
+* (5/5)   Correct directory organization
+* (5/5)   Executable C runs without input without throwing
+    - Nice
+* (24/24) Executable C passing tests
+* (9/10) Task 2
+    - (-1) "addToken" and "removeEdge"'s variable type does not comply to the specification
+* (12/12) Task 3
+* (15/18) Task 4
+    - (-2) Does not specify all valid shapes of messages
+    - (-1) Sequence diagram should not include info about program implementation
+
+Total: (90/94)
+
+Graded by Ivan Chen.

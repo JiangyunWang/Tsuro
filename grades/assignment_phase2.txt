@@ -1,0 +1,13 @@
+* (15/15) Delivery of artifacts
+* (9/10) rules.md
+    - (-1) not very clear with how the rule checker will know about the state of the board
+* (15/15) board.PP
+    - (-0) why are you putting semicolons when you're programming in Python????
+* (12/15) tests
+    - (-3) output format slightly off
+        + [if  A  is the entrance,  G  is the exit.] -> ["if ", port, " is the entrance, ", port, " is the exit."]
+
+Total: (51/55)
+
+Graded by Ivan Chen.
+

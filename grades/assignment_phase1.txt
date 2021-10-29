@@ -1,0 +1,17 @@
+Part A:
+* README: 5/5
+* plan.md: 23/25
+  -2: No mention of Referee in the plan.
+          
+Part B:
+* Delivery of artifacts: 10/10
+* board.md: 15/15
+* tiles.PP: 13/15
+  -2: Did not find the method to generate 35 tiles algorithmically.
+* allTiles.PP: 5/5
+* 3 example renders of tiles: 5/5
+
+
+Total: (76/80)
+
+Graded by Divya.
